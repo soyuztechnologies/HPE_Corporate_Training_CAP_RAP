@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sales Orders | Emirates</title>
+  <link rel="icon" href="https://upload.wikimedia.org/wikipedia/en/7/7c/Emirates_logo.svg" type="image/svg+xml">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    header img {
+      height: 60px;
+      margin-right: 15px;
+    }
+
+    header h1 {
+      color: #d71920;
+      font-size: 2em;
+      margin: 0;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    thead {
+      background-color: #d71920;
+      color: white;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    tbody tr:nth-child(odd) {
+      background-color: #fdf4f4;
+    }
+
+    tbody tr:hover {
+      background-color: #ffecec;
+    }
+
+    caption {
+      caption-side: top;
+      padding: 10px;
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #d71920;
+    }
+
+    @media screen and (max-width: 768px) {
+      th, td {
+        padding: 8px 10px;
+        font-size: 0.9em;
+      }
+
+      header h1 {
+        font-size: 1.5em;
+      }
+
+      header img {
+        height: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="https://upload.wikimedia.org/wikipedia/en/7/7c/Emirates_logo.svg" alt="Emirates Logo">
+    <h1>Emirates Sales Orders</h1>
+  </header>
+
+  <table id="salesOrderTable">
+    <caption>Sales Order Overview</caption>
+    <thead>
+      <tr>
+        <th>Sales Order</th>
+        <th>Organization</th>
+        <th>Order Type</th>
+        <th>Sold To</th>
+        <th>Payment</th>
+        <th>Material</th>
+        <th>Quantity</th>
+        <th>Amount (AED)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data will be injected here -->
+    </tbody>
+  </table>
+
+  <script>
+    fetch('/odata/v4/CatalogService/MySalesOrder')
+      .then(response => response.json())
+      .then(data => {
+        const tableBody = document.querySelector('#salesOrderTable tbody');
+        data.value.forEach(order => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${order.SalesOrder || '-'}</td>
+            <td>${order.SalesOrganization || '-'}</td>
+            <td>${order.SalesOrderType || '-'}</td>
+            <td>${order.SoldToParty || '-'}</td>
+            <td>${order.PaymentMethod || '-'}</td>
+            <td>${order.Material || '-'}</td>
+            <td>${order.RequestedQuantity || '-'}</td>
+            <td>${order.NetAmount || '-'}</td>
+          `;
+          tableBody.appendChild(row);
+        });
+      })
+      .catch(error => {
+        console.error('Error loading data:', error);
+        document.querySelector('#salesOrderTable tbody').innerHTML = `
+          <tr><td colspan="8">Failed to load sales order data.</td></tr>`;
+      });
+  </script>
+</body>
+</html>
