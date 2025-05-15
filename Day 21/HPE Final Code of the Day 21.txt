@@ -1,0 +1,341 @@
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'Root entity for RAP BPO Travel Request'
+@Metadata.ignorePropagatedAnnotations: true
+define root view entity ZHPE_AB_TRAVEL as select from /dmo/travel_m
+
+--Composition child for travel viz booking
+composition[0..*] of ZHPE_AB_BOOKING as _Booking 
+--associations - lose coupling to get dependent data
+association[1] to /DMO/I_Agency as _Agency on 
+    $projection.AgencyId = _Agency.AgencyID
+association[1] to /DMO/I_Customer as _Customer on
+    $projection.CustomerId = _Customer.CustomerID
+association[1] to I_Currency as _Currency on
+    $projection.CurrencyCode = _Currency.Currency
+association[1..1] to /DMO/I_Overall_Status_VH as _OverallStatus on
+    $projection.OverallStatus = _OverallStatus.OverallStatus
+{
+    @ObjectModel.text.element: [ 'Description' ]
+    key travel_id as TravelId,
+    @ObjectModel.text.element: [ 'AgencyName' ]
+    @Consumption.valueHelpDefinition: [{ 
+        entity.name: '/DMO/I_Agency',
+        entity.element: 'AgencyID'
+     }]
+    agency_id as AgencyId,
+    @Semantics.text: true
+    _Agency.Name as AgencyName,
+    @ObjectModel.text.element: [ 'CustomerName' ]
+    @Consumption.valueHelpDefinition: [{ 
+        entity.name: '/DMO/I_Customer',
+        entity.element: 'CustomerID'
+     }]
+    customer_id as CustomerId,
+    @Semantics.text: true
+    _Customer.LastName as CustomerName,
+    begin_date as BeginDate,
+    end_date as EndDate,
+    @Semantics.amount.currencyCode: 'CurrencyCode'
+    booking_fee as BookingFee,
+    @Semantics.amount.currencyCode: 'CurrencyCode'
+    total_price as TotalPrice,
+    currency_code as CurrencyCode,
+    @Semantics.text: true
+    description as Description,
+    @Consumption.valueHelpDefinition: [{ 
+        entity.name: '/DMO/I_Overall_Status_VH',
+        entity.element: 'OverallStatus'
+     }]
+    overall_status as OverallStatus,
+    case overall_status
+        when 'O' then 'Open'
+        when 'A' then 'Approved'
+        when 'X' then 'Rejected'
+        else 'Unknown'
+        end as Status,
+    case overall_status
+        when 'O' then 2
+        when 'A' then 3
+        when 'X' then 1
+        else 0
+        end as Criticality,
+    @Semantics.user.createdBy: true
+    created_by as CreatedBy,
+    @Semantics.systemDateTime.createdAt: true
+    created_at as CreatedAt,
+    @Semantics.user.lastChangedBy: true
+    last_changed_by as LastChangedBy,
+    @Semantics.systemDateTime.lastChangedAt: true
+    //Local ETag Field --> Odata Etag
+    last_changed_at as LastChangedAt,
+    /*Expose associations*/
+    _Booking,
+    _Agency,
+    _Customer,
+    _Currency,
+    _OverallStatus
+}
+
+
+
+
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'Booking child of root, Booking entity'
+@Metadata.ignorePropagatedAnnotations: true
+define view entity ZHPE_AB_BOOKING as select from /dmo/booking_m
+composition[0..*] of ZHPE_AB_BOOKSUPPL as _BookingSupplement
+association to parent ZHPE_AB_TRAVEL as _Travel on
+    $projection.TravelId = _Travel.TravelId
+association[1..1] to /DMO/I_Customer as _Customer on
+    $projection.CustomerId = _Customer.CustomerID
+association[1..1] to /DMO/I_Carrier as _Carrier on
+    $projection.CarrierId = _Carrier.AirlineID
+association[1..1] to /DMO/I_Connection as _Connection on
+    $projection.CarrierId = _Connection.AirlineID and
+    $projection.ConnectionId = _Connection.ConnectionID
+association[1..1] to /DMO/I_Booking_Status_VH as _BookingStatus on
+    $projection.BookingStatus = _BookingStatus.BookingStatus    
+{
+    key travel_id as TravelId,
+    key booking_id as BookingId,
+    booking_date as BookingDate,
+    @Consumption.valueHelpDefinition: [{ 
+        entity.name: '/DMO/I_Customer',
+        entity.element: 'CustomerID'
+     }]
+    customer_id as CustomerId,
+    @Consumption.valueHelpDefinition: [{ 
+        entity.name: '/DMO/I_Carrier',
+        entity.element: 'AirlineID'
+     }]
+    carrier_id as CarrierId,
+    @Consumption.valueHelpDefinition: [{ 
+        entity.name: '/DMO/I_Connection',
+        entity.element: 'ConnectionID'
+     }]
+    connection_id as ConnectionId,
+    flight_date as FlightDate,
+    @Semantics.amount.currencyCode: 'CurrencyCode'
+    flight_price as FlightPrice,
+    currency_code as CurrencyCode,
+    booking_status as BookingStatus,
+    @Semantics.systemDateTime.lastChangedAt: true
+    last_changed_at as LastChangedAt,
+    /*Expose associations*/
+    _Customer,
+    _Carrier,
+    _Connection,
+    _BookingStatus,
+    _Travel,
+    _BookingSupplement
+}
+
+
+
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'Booking Supplement the last child of BO'
+@Metadata.ignorePropagatedAnnotations: true
+define view entity ZHPE_AB_BOOKSUPPL as select from  /dmo/booksuppl_m
+association to parent ZHPE_AB_BOOKING as _Booking on
+    $projection.BookingId = _Booking.BookingId and
+    $projection.TravelId = _Booking.TravelId
+association[1..1] to ZHPE_AB_TRAVEL as _Travel on
+    $projection.TravelId = _Travel.TravelId
+association[1..1] to /DMO/I_Supplement as _Product on
+    $projection.SupplementId = _Product.SupplementID
+association[1..*] to /DMO/I_SupplementText as _SupplementText on
+    $projection.SupplementId = _SupplementText.SupplementID   
+    
+{
+    key travel_id as TravelId,
+    key booking_id as BookingId,
+    key booking_supplement_id as BookingSupplementId,
+    supplement_id as SupplementId,
+    @Semantics.amount.currencyCode: 'CurrencyCode'
+    price as Price,
+    currency_code as CurrencyCode,
+    @Semantics.systemDateTime.lastChangedAt: true
+    last_changed_at as LastChangedAt,
+    _Travel,
+    _Product,
+    _SupplementText,
+    _Booking
+}
+
+
+
+
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'Processor projection layer'
+@Metadata.ignorePropagatedAnnotations: false
+@Metadata.allowExtensions: true
+define root view entity ZHPE_AB_TRAVEL_PROCESSOR
+  provider contract transactional_query as projection on ZHPE_AB_TRAVEL
+{
+    key TravelId,
+    AgencyId,
+    CustomerId,
+    BeginDate,
+    EndDate,
+    BookingFee,
+    TotalPrice,
+    CurrencyCode,
+    Description,
+    OverallStatus,
+    CustomerName,
+    AgencyName,
+    Status,
+    Criticality,
+    /* Associations */
+    _Agency,
+    _Booking,
+    _Currency,
+    _Customer,
+    _OverallStatus
+}
+
+
+
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'Projection layer on booking for processor'
+@Metadata.ignorePropagatedAnnotations: false
+define view entity ZHPE_AB_BOOKING_PROCESSOR
+  provider contract transactional_query as projection on ZHPE_AB_BOOKING
+{
+    key TravelId,
+    key BookingId,
+    BookingDate,
+    CustomerId,
+    CarrierId,
+    ConnectionId,
+    FlightDate,
+    FlightPrice,
+    CurrencyCode,
+    BookingStatus,
+    LastChangedAt,
+    /* Associations */
+    _BookingStatus,
+    _BookingSupplement,
+    _Carrier,
+    _Connection,
+    _Customer,
+    _Travel
+}
+
+
+
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'Booking Supplement Projection for processor'
+@Metadata.ignorePropagatedAnnotations: false
+define view entity ZHPE_AB_BOOKSUPPL_PROCESSOR
+  provider contract transactional_query as projection on ZHPE_AB_BOOKSUPPL
+{
+    key TravelId,
+    key BookingId,
+    key BookingSupplementId,
+    SupplementId,
+    Price,
+    CurrencyCode,
+    LastChangedAt,
+    /* Associations */
+    _Booking,
+    _Product,
+    _SupplementText,
+    _Travel
+}
+
+
+
+@Metadata.layer: #CUSTOMER
+
+@UI.headerInfo: { 
+    typeName: 'Travel',
+    typeNamePlural: 'Travel Requests',
+    title: { value: 'TravelId' },
+    description: { value: 'Description' }
+}
+
+annotate entity ZHPE_AB_TRAVEL_PROCESSOR
+    with 
+{
+    @UI.facet: [{
+        purpose: #STANDARD,
+        type: #COLLECTION,
+        id: 'moreInfo',
+        label: 'More Information',
+        position: 10    
+      },{ 
+        purpose: #STANDARD,
+        type: #IDENTIFICATION_REFERENCE,
+        position: 10,
+        parentId: 'moreInfo',
+        label: 'Travel head'
+      },{ 
+        purpose: #STANDARD,
+        type: #FIELDGROUP_REFERENCE,
+        position: 20,
+        parentId: 'moreInfo',
+        label: 'Prices',
+        targetQualifier: 'spiderman',
+        id: 'spiderman'      
+      },{ 
+        purpose: #STANDARD,
+        type: #FIELDGROUP_REFERENCE,
+        position: 30,
+        parentId: 'moreInfo',
+        label: 'Status info',
+        targetQualifier: 'superman',
+        id: 'superman'      
+      }]
+    
+    @UI.selectionField: [{ position: 10 }]
+    @UI.lineItem: [{ position: 10 }]
+    @UI.identification: [{ position: 10 }]
+    TravelId;
+    @UI.selectionField: [{ position: 20 }]
+    @UI.lineItem: [{ position: 20 }]
+    @UI.identification: [{ position: 20 }]
+    AgencyId;
+    @UI.selectionField: [{ position: 30 }]
+    @UI.lineItem: [{ position: 30 }]
+    @UI.identification: [{ position: 30 }]
+    CustomerId;
+    @UI.fieldGroup: [{ position: 20, qualifier: 'spiderman' }]
+    BeginDate;
+    @UI.fieldGroup: [{ position: 30, qualifier: 'spiderman' }]
+    EndDate;
+    @UI.fieldGroup: [{ position: 10, qualifier: 'superman' }]
+    BookingFee;
+    @UI.selectionField: [{ position: 40 }]
+    @UI.lineItem: [{ position: 40 }]
+    @UI.fieldGroup: [{ position: 20, qualifier: 'superman' }]
+    TotalPrice;
+    @UI.lineItem: [{ position: 50 }]
+    @UI.fieldGroup: [{ position: 10, qualifier: 'spiderman' }]
+    CurrencyCode;
+    @UI.identification: [{ position: 40 }]
+    Description;
+    @UI.selectionField: [{ position: 50 }]
+    @UI.fieldGroup: [{ position: 30, qualifier: 'superman' }]
+    OverallStatus;
+    @UI.lineItem: [{ position: 60, criticality: 'Criticality' }]
+    Status;
+    
+}
+
+
+@EndUserText.label: 'Travel processor service definition'
+define service ZHPE_AB_SD_TRAVEL_PROCESSOR {
+  expose ZHPE_AB_TRAVEL_PROCESSOR    as Travel;
+  expose ZHPE_AB_BOOKING_PROCESSOR   as Booking;
+  expose ZHPE_AB_BOOKSUPPL_PROCESSOR as BookingSuppl;
+  expose /DMO/I_Agency               as Agency;
+  expose /DMO/I_Customer             as Customer;
+  expose I_Currency                  as Currency;
+  expose /DMO/I_Carrier              as Carrier;
+  expose /DMO/I_Connection           as Connection;
+  expose /DMO/I_Booking_Status_VH    as BookingStatus;
+  expose /DMO/I_Supplement           as Supplement;
+  expose /DMO/I_SupplementText       as SupplementText;
+}
+

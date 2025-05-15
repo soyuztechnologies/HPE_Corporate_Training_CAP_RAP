@@ -2,10 +2,10 @@
 
 @AccessControl.authorizationCheck: #NOT_REQUIRED
 @EndUserText.label: 'Travel Root of by RAP BO'
-define root view entity ZATS_XX_TRAVEL as select from /dmo/travel_m
+define root view entity ZHPE_AB_TRAVEL as select from /dmo/travel_m
 
 --Composition child for travel viz booking
-composition[0..*] of ZATS_XX_BOOKING as _Booking 
+composition[0..*] of ZHPE_AB_BOOKING as _Booking 
 --associations - lose coupling to get dependent data
 association[1] to /DMO/I_Agency as _Agency on 
     $projection.AgencyId = _Agency.AgencyID
@@ -63,7 +63,7 @@ association[1..1] to /DMO/I_Overall_Status_VH as _OverallStatus on
 @EndUserText.label: 'My Travel processor projection'
 @AccessControl.authorizationCheck: #NOT_REQUIRED
 @Metadata.allowExtensions: true
-define root view entity ZATS_XX_TRAVEL_PROCESSOR as projection on ZATS_XX_TRAVEL
+define root view entity ZHPE_AB_TRAVEL_PROCESSOR as projection on ZHPE_AB_TRAVEL
 {
     @ObjectModel.text.element: [ 'Description' ]
     key TravelId,
@@ -105,7 +105,7 @@ define root view entity ZATS_XX_TRAVEL_PROCESSOR as projection on ZATS_XX_TRAVEL
     Criticality,
     /* Associations */
     _Agency,
-    _Booking: redirected to composition child ZATS_XX_BOOKING_PROCESSOR,
+    _Booking: redirected to composition child ZHPE_AB_BOOKING_PROCESSOR,
     _Currency,
     _Customer,
     _OverallStatus
@@ -117,7 +117,7 @@ define root view entity ZATS_XX_TRAVEL_PROCESSOR as projection on ZATS_XX_TRAVEL
 @EndUserText.label: 'My Travel processor projection'
 @AccessControl.authorizationCheck: #NOT_REQUIRED
 @Metadata.allowExtensions: true
-define view entity ZATS_XX_BOOKING_PROCESSOR as projection on ZATS_XX_BOOKING
+define view entity ZHPE_AB_BOOKING_PROCESSOR as projection on ZHPE_AB_BOOKING
 {
     key TravelId,
     key BookingId,
@@ -132,11 +132,11 @@ define view entity ZATS_XX_BOOKING_PROCESSOR as projection on ZATS_XX_BOOKING
     LastChangedAt,
     /* Associations */
     _BookingStatus,
-    _BookingSupplement: redirected to composition child ZATS_XX_BOOKSUPPL_PROCESSOR,
+    _BookingSupplement: redirected to composition child ZHPE_AB_BOOKSUPPL_PROCESSOR,
     _Carrier,
     _Connection,
     _Customer,
-    _Travel: redirected to parent ZATS_XX_TRAVEL_PROCESSOR
+    _Travel: redirected to parent ZHPE_AB_TRAVEL_PROCESSOR
 }
 
 
@@ -145,8 +145,8 @@ define view entity ZATS_XX_BOOKING_PROCESSOR as projection on ZATS_XX_BOOKING
 @EndUserText.label: 'My Travel processor projection'
 @AccessControl.authorizationCheck: #NOT_REQUIRED
 @Metadata.allowExtensions: true
-define view entity ZATS_XX_BOOKSUPPL_PROCESSOR 
-    as projection on ZATS_XX_BOOKSUPPL
+define view entity ZHPE_AB_BOOKSUPPL_PROCESSOR 
+    as projection on ZHPE_AB_BOOKSUPPL
 {
     key TravelId,
     key BookingId,
@@ -156,7 +156,7 @@ define view entity ZATS_XX_BOOKSUPPL_PROCESSOR
     CurrencyCode,
     LastChangedAt,
     /* Associations */
-    _Booking: redirected to parent ZATS_XX_BOOKING_PROCESSOR,
+    _Booking: redirected to parent ZHPE_AB_BOOKING_PROCESSOR,
     _Travel
 }
 
@@ -171,7 +171,7 @@ define view entity ZATS_XX_BOOKSUPPL_PROCESSOR
     title: { value: 'TravelId' },
     description: { value: '_Customer.FirstName' }
  }
-annotate view ZATS_XX_TRAVEL_PROCESSOR
+annotate view ZHPE_AB_TRAVEL_PROCESSOR
     with 
 {
     @UI.facet: [
@@ -287,7 +287,7 @@ annotate view ZATS_XX_TRAVEL_PROCESSOR
     title: { value: 'BookingId' },
     description: { value: '_Carrier.Name' }
 }
-annotate view ZATS_XX_BOOKING_PROCESSOR
+annotate view ZHPE_AB_BOOKING_PROCESSOR
     with 
 {
     @UI.facet: [
@@ -344,7 +344,7 @@ annotate view ZATS_XX_BOOKING_PROCESSOR
     title: { value: 'BookingSupplementId' },
     description: { value: 'Price' }
 }
-annotate view ZATS_XX_BOOKSUPPL_PROCESSOR
+annotate view ZHPE_AB_BOOKSUPPL_PROCESSOR
     with 
 {
     @UI.facet: [{ 
@@ -377,7 +377,7 @@ managed implementation in class zbp_ats_xx_travel unique;
 strict ( 2 );
 
 //define the behavior for root entity
-define behavior for ZATS_XX_TRAVEL alias Travel
+define behavior for ZHPE_AB_TRAVEL alias Travel
 //telling the framework to insert data in this db table for travel request
 persistent table /dmo/travel_m
 //how the RAP should handle the locks - if a travel request is locked
@@ -398,7 +398,7 @@ etag master LastChangedAt
 }
 
 //define the behavior for child entity
-define behavior for ZATS_XX_BOOKING alias Booking
+define behavior for ZHPE_AB_BOOKING alias Booking
 //telling the framework to insert data in this db table for booking
 persistent table /dmo/booking_m
 lock dependent by _Travel
@@ -415,7 +415,7 @@ etag master LastChangedAt
 }
 
 //define the behavior for child entity
-define behavior for ZATS_XX_BOOKSUPPL alias BookSuppl
+define behavior for ZHPE_AB_BOOKSUPPL alias BookSuppl
 //telling the framework to insert data in this db table for booking suppl
 persistent table /dmo/booksuppl_m
 lock dependent by _Travel
@@ -435,7 +435,7 @@ etag master LastChangedAt
 projection;
 strict ( 2 );
 
-define behavior for ZATS_XX_TRAVEL_PROCESSOR alias Travel
+define behavior for ZHPE_AB_TRAVEL_PROCESSOR alias Travel
 {
   use create;
   use update;
@@ -444,7 +444,7 @@ define behavior for ZATS_XX_TRAVEL_PROCESSOR alias Travel
   use association _Booking { create; }
 }
 
-define behavior for ZATS_XX_BOOKING_PROCESSOR alias Booking
+define behavior for ZHPE_AB_BOOKING_PROCESSOR alias Booking
 {
   use update;
   use delete;
@@ -453,7 +453,7 @@ define behavior for ZATS_XX_BOOKING_PROCESSOR alias Booking
 //  use association _BookingSupplement { create; }
 }
 
-//define behavior for ZATS_XX_BOOKSUPPL_PROCESSOR alias BookingSuppl
+//define behavior for ZHPE_AB_BOOKSUPPL_PROCESSOR alias BookingSuppl
 //{
 //  use update;
 //  use delete;
